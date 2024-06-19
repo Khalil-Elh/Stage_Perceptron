@@ -27,9 +27,8 @@ def model(X,W,b):
     #Y are the true answers
 
 def cost(A,Y):
-    if len(Y)==0:
-        return 1.
-    L = -1/len(Y)*np.sum(Y*np.log(A)+(1-Y)*np.log(1-A))
+    epsilon=1e-15
+    L = (-1/len(Y))*np.sum(Y*np.log(A+epsilon)+(1-Y)*np.log(1-A+epsilon))
     return L
 
 def cost1(A, Y):
@@ -98,9 +97,14 @@ def createDataSet(n,m,op):
     Yv=Y[split_index:]
     return Xt,Xv,Yt,Yv
 
-def creatgraph(L,name,file_name):
+def creatgraph(L,name,file_name,step):
     fig, ax = plt.subplots()
-    ax.plot(L)
+    ax.set_ylim(0, 1)
+    ax.yaxis.set_major_locator(plt.MultipleLocator(0.2))
+    ax.yaxis.set_major_formatter(plt.FormatStrFormatter('%.1f')) 
+    for i in range (len(L)):
+        ax.plot(L[i],label=f"step : {step[i]}")
+    ax.legend()
     ax.set_xlabel("Number of itteration")
     ax.set_ylabel("Loss function")
     ax.set_title(name)
@@ -112,10 +116,33 @@ def testpercep(test_number,op):
     m = int(input("Enter how many data points you wanna create: "))
     n = 2
     Xt,Xv,Yt,Yv = createDataSet(n,m,op)
+    l_loss=[]
+    l_step=[]
     for i in range (test_number):
-        pas = float(input("Enter a training step: "))
-        W,b,loss = perceptron(Xt,Yt,pas)
-        creatgraph(loss,f"Graph of Log loss over with training step: {pas} pour l'oppérateur "+str(op),str(op)+f"loss_graph_pas_{pas}.png")
-    return
+        step = float(input("Enter a training step: "))
+        W,b,loss = perceptron(Xt,Yt,step)
+        l_loss.append(loss)
+        l_step.append(str(step))
+    creatgraph(l_loss,f"Graph of Log loss "+str(op),str(op)+f"loss_graph.png",l_step)
+    return Xt, Xv, Yt, Yv
 
-testpercep(5,operator.xor)
+#testpercep(5,operator.and_)
+
+def lineardecisionline(op):
+    X = np.array([[0,0],[0,1],[1,0],[1,1]])
+    Y = Y=op(X[:,0],X[:,1]).reshape(-1,1)
+    w,b,loss = perceptron(X,Y,0.03)
+    xx, yy = np.meshgrid(np.linspace(-0.5,1.5,200), np.linspace(-0.5, 1.5, 200))
+    grid = np.c_[xx.ravel(),yy.ravel()]
+    probs = model(grid, w, b).reshape(xx.shape)
+    fig, ax = plt.subplots()
+    ax.scatter(X[:,0], X[:,1],c=Y.flatten(), cmap= plt.cm.bwr, edgecolor='k')
+    ax.contour(xx, yy, probs, levels=[0.5], cmap="Greys_r")
+    ax.set_ylim(-0.5, 1.5)
+    ax.set_xlim(-0.5, 1.5)
+    ax.set_title("Decision line for:"+str(op))
+    fig.savefig("/Users/khalil_elhajoui/Documents/Projet Perso/Stage/L1/Stage_Perceptron/Graph/Decision line for "+str(op)+".png")
+    plt.close(fig)
+
+lineardecisionline(operator.xor)
+
